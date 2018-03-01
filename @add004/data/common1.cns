@@ -1866,8 +1866,8 @@ movetype=h
 physics=n
 velset=0,0
 
-;;--- <<IKEMENには無用>>
-;--- helper for chasing target after Reflecsion ; 飛び道具反射後追跡用ヘルパー
+;;--- <<IKEMENには無用>> Translation - Not Usable
+;--- helper for chasing target after Reflection ; 飛び道具反射後追跡用ヘルパー
 [state 0] ;[.00]
 	type=helper
 	trigger1=ishelper && (var(15)=10311) && (var(16)=10212) && (var(17)=10113) && (var(18)=30636)
@@ -1880,7 +1880,7 @@ velset=0,0
 
 ;;--- clean helpers ; ヘルパー掃除
 ;; WinMUGEN
-;; -飛び道具反射用ヘルパー：０フレームで消すとムゲンが落ちる
+;; -飛び道具反射用ヘルパー：０フレームで消すとムゲンが落ちる Translation - Hookup/Missile helper for reflection: Mugen falls when it is erased with 0 frame
 
 [state 0] ;[.01ds]
 	type=selfstate
@@ -2062,7 +2062,7 @@ movetype=h
 physics=n
 velset=0,0
 
-;;--- <<IKEMENには無用>>
+;;--- <<IKEMENには無用>> Translation - Not Usable  Translation - Not Usable
 ;--- helper for chasing target after Reflecsion ; 飛び道具反射後追跡用ヘルパー
 [state 0] ;[.00]
 	type=helper
@@ -2244,8 +2244,8 @@ movetype=h
 physics=n
 velset=0,0
 
-;;--- <<IKEMENには無用>>
-;--- helper for chasing target after Reflecsion ; 飛び道具反射後追跡用ヘルパー
+;;--- <<IKEMENには無用>> Translation - Not Usable  Translation - Not Usable
+;--- helper for chasing target after Reflection ; 飛び道具反射後追跡用ヘルパー
 [state 0] ;[.00]
 	type=helper
 	trigger1=ishelper
@@ -2353,7 +2353,7 @@ movetype=h
 physics=n
 ctrl=0
 
-;;--- <<IKEMENには無用>>
+;;--- <<IKEMENには無用>> Translation - Not Usable
 ;--- helper for chasing target after Reflecsion ; 飛び道具反射後追跡用ヘルパー
 [state 0] ;[.00]
 	type=helper
@@ -3680,7 +3680,7 @@ type=s
 ;	trigger1=roundno=1
 ;	fvalue=0
 
-;;--- <<IKEMENには無用>>
+;;--- <<IKEMENには無用>> Translation - Not Usable
 ;;--- change palette (v1)
 [state 0] ;[.02]
 	type=remappal
@@ -4213,9 +4213,9 @@ ctrl=0
 [statedef 190116]
 type=s
 movetype=i; u 
-; h: ヒットは連続しますが、投げられません
-; i: 投げられますが、ヒットは連続しません
-; u: 直前のタイプを継承
+; h: Translation - Hit will be continuous, but not thrown ; ヒットは連続しますが、投げられません
+; i: Translation - Can be thrown, but the hits are not continuous ; 投げられますが、ヒットは連続しません
+; u: Translation - Inherit previous type ; 直前のタイプを継承
 physics=s
 anim=5300
 movehitpersist=1
@@ -6125,6 +6125,10 @@ persistent=0 ;*@@@@@@@@
 ;==========================
 ;==========================
 ; proj chaser after Reflecsion [helper]
+; Translation - For jump recovery after tracking
+
+; Since the shooter can not guard the jump tool after reflection
+; Defense-inducing helper (accompanied by jumps after reflection)
 ; 飛び道具反射後追跡用
 
 ; 反射後の飛び道具を,発射主がガードできないため
@@ -7607,7 +7611,7 @@ ctrl=0
 ;---
 ;>>sys::ai_switch
 ;;>>@Config.AI>>
-;; ai判定  v51 [def:0 / ai:1-8 / hum:-1]
+;; ai判定 (determines)  v51 [def:0 / ai:1-8 / hum:-1]
 [state 0]
 	type=varset
 	trigger1=1

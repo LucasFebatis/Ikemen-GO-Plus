@@ -73,7 +73,7 @@ func RenderInit() {
 		gl.GetObjectParameterivARB(shader, gl.OBJECT_COMPILE_STATUS_ARB, &ok)
 		if ok == 0 {
 			chk(errLog(shader))
-			panic(Error("コンパイルエラー"))
+			panic(Error("Compile error"))
 		}
 		return
 	}
@@ -86,7 +86,7 @@ func RenderInit() {
 		gl.GetObjectParameterivARB(program, gl.OBJECT_LINK_STATUS_ARB, &ok)
 		if ok == 0 {
 			chk(errLog(program))
-			panic(Error("リンクエラー"))
+			panic(Error("Link error"))
 		}
 		return
 	}

@@ -37,7 +37,7 @@ func loadFnt(filename string) (*Fnt, error) {
 		return nil, err
 	}
 	if string(buf[:n]) != "ElecbyteFnt\x00" {
-		return nil, Error("ElecbyteFntではありません")
+		return nil, Error("It is not ElecbyteFnt")
 	}
 	read := func(x interface{}) error {
 		return binary.Read(fp, binary.LittleEndian, x)
@@ -276,7 +276,7 @@ func (f *Fnt) DrawText(txt string, x, y, xscl, yscl float32,
 	if bank < 0 || len(f.palettes) <= int(bank) {
 		bank = 0
 	}
-	// nil から呼ぶと allPalFX が適用される
+	// allPalFX is applied when the call from nil // nil から呼ぶと allPalFX が適用される
 	pal := (*PalFX)(nil).getFxPal(f.palettes[bank][:], false)
 	gl.Enable(gl.TEXTURE_1D)
 	gl.ActiveTexture(gl.TEXTURE1)

@@ -14,14 +14,14 @@ func luaRegister(l *lua.LState, name string, f func(*lua.LState) int) {
 }
 func strArg(l *lua.LState, argi int) string {
 	if !lua.LVCanConvToString(l.Get(argi)) {
-		l.RaiseError("%v番目の引数が文字列ではありません。", argi)
+		l.RaiseError("The %v argument is not a string.", argi)
 	}
 	return l.ToString(argi)
 }
 func numArg(l *lua.LState, argi int) float64 {
 	num, ok := l.Get(argi).(lua.LNumber)
 	if !ok {
-		l.RaiseError("%v番目の引数が数ではありません。", argi)
+		l.RaiseError("The %v argument is not a number.", argi)
 	}
 	return float64(num)
 }
@@ -40,7 +40,7 @@ func toUserData(l *lua.LState, argi int) interface{} {
 	return nil
 }
 func userDataError(l *lua.LState, argi int, udtype interface{}) {
-	l.RaiseError("%v番目の引数が%Tではありません。", argi, udtype)
+	l.RaiseError("%v The second argument is not%T.", argi, udtype)
 }
 
 type InputDialog interface {
@@ -206,7 +206,7 @@ func scriptCommonInit(l *lua.LState) {
 	luaRegister(l, "setAutoguard", func(l *lua.LState) int {
 		pn := int(numArg(l, 1))
 		if pn < 1 || pn > MaxSimul*2 {
-			l.RaiseError("プレイヤー番号(%v)が不正です。", pn)
+			l.RaiseError("Player number (%v) is invalid.", pn)
 		}
 		sys.autoguard[pn-1] = boolArg(l, 2)
 		return 0
@@ -214,7 +214,7 @@ func scriptCommonInit(l *lua.LState) {
 	luaRegister(l, "setPowerShare", func(l *lua.LState) int {
 		tn := int(numArg(l, 1))
 		if tn < 1 || tn > 2 {
-			l.RaiseError("チーム番号(%v)が不正です。", tn)
+			l.RaiseError("Team number (%v) is invalid.", tn)
 		}
 		sys.powerShare[tn-1] = boolArg(l, 2)
 		return 0
@@ -230,7 +230,7 @@ func scriptCommonInit(l *lua.LState) {
 	luaRegister(l, "setHomeTeam", func(l *lua.LState) int {
 		tn := int(numArg(l, 1))
 		if tn < 1 || tn > 2 {
-			l.RaiseError("チーム番号(%v)が不正です。", tn)
+			l.RaiseError("Team number (%v) is invalid.", tn)
 		}
 		sys.home = tn - 1
 		return 0
@@ -321,7 +321,7 @@ func systemScriptInit(l *lua.LState) {
 		act := strArg(l, 2)
 		anim := NewAnim(s, act)
 		if anim == nil {
-			l.RaiseError("\n%v\n\nデータの読み込みに失敗しました。", act)
+			l.RaiseError("Failed to read data.\n%v\n\n", act)
 		}
 		l.Push(newUserData(l, anim))
 		return 1
@@ -418,7 +418,7 @@ func systemScriptInit(l *lua.LState) {
 	})
 	luaRegister(l, "enterNetPlay", func(*lua.LState) int {
 		if sys.netInput != nil {
-			l.RaiseError("すでに通信中です。")
+			l.RaiseError("You are already connected.")
 		}
 		sys.chars = [len(sys.chars)][]*Char{}
 		sys.netInput = NewNetInput("replay/netplay.replay")
@@ -453,7 +453,7 @@ func systemScriptInit(l *lua.LState) {
 	luaRegister(l, "setCom", func(*lua.LState) int {
 		pn := int(numArg(l, 1))
 		if pn < 1 || pn > MaxSimul*2 {
-			l.RaiseError("プレイヤー番号(%v)が不正です。", pn)
+			l.RaiseError("Player number (%v) is invalid.", pn)
 		}
 		sys.com[pn-1] = Max(0, int32(numArg(l, 2)))
 		return 0
@@ -538,15 +538,15 @@ func systemScriptInit(l *lua.LState) {
 	luaRegister(l, "setTeamMode", func(*lua.LState) int {
 		tn := int(numArg(l, 1))
 		if tn < 1 || tn > 2 {
-			l.RaiseError("チーム番号(%v)が不正です。", tn)
+			l.RaiseError("Team number (%v) is invalid.", tn)
 		}
 		tm := TeamMode(numArg(l, 2))
 		if tm < 0 || tm > TM_LAST {
-			l.RaiseError("モード番号(%v)が不正です。", tm)
+			l.RaiseError("Team number (%v) is invalid.", tm)
 		}
 		nt := int32(numArg(l, 3))
 		if nt < 1 || nt > MaxSimul {
-			l.RaiseError("チーム人数(%v)が不正です。", nt)
+			l.RaiseError("Team number (%v) is invalid.", nt)
 		}
 		sys.sel.selected[tn-1], sys.tmode[tn-1] = nil, tm
 		sys.numTurns[tn-1], sys.numSimul[tn-1] = nt, nt
@@ -568,7 +568,7 @@ func systemScriptInit(l *lua.LState) {
 	luaRegister(l, "selectChar", func(*lua.LState) int {
 		tn := int(numArg(l, 1))
 		if tn < 1 || tn > 2 {
-			l.RaiseError("チーム番号(%v)が不正です。", tn)
+			l.RaiseError("Team number (%v) is invalid.", tn)
 		}
 		cn, pl, ret := int(numArg(l, 2)), int(numArg(l, 3)), 0
 		if pl >= 1 && pl <= 12 && sys.sel.AddSelectedChar(tn-1, cn, pl) {
@@ -703,7 +703,7 @@ func systemScriptInit(l *lua.LState) {
 		src, dst := int(numArg(l, 1)), int(numArg(l, 2))
 		if src < 1 || src > len(sys.inputRemap) ||
 			dst < 1 || dst > len(sys.inputRemap) {
-			l.RaiseError("プレイヤー番号(%v, %v)が不正です。", src, dst)
+			l.RaiseError("Player number (%v, %v) is invalid.", src, dst)
 		}
 		sys.inputRemap[src-1] = dst - 1
 		return 0

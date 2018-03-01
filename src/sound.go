@@ -316,7 +316,7 @@ func ReadWave(f *os.File, ofs int64) (*Wave, error) {
 		return nil, err
 	}
 	if string(buf[:n]) != "RIFF" {
-		return nil, Error("RIFFではありません")
+		return nil, Error("It is not RIFF")
 	}
 	read := func(x interface{}) error {
 		return binary.Read(f, binary.LittleEndian, x)
@@ -352,19 +352,19 @@ func ReadWave(f *os.File, ofs int64) (*Wave, error) {
 				return nil, err
 			}
 			if fmtID != 1 {
-				return nil, Error("リニアPCMではありません")
+				return nil, Error("It is not a linear PCM")
 			}
 			if err := read(&w.Channels); err != nil {
 				return nil, err
 			}
 			if w.Channels < 1 || w.Channels > 2 {
-				return nil, Error("チャンネル数が不正です")
+				return nil, Error("Invalid number of channels")
 			}
 			if err := read(&w.SamplesPerSec); err != nil {
 				return nil, err
 			}
 			if w.SamplesPerSec < 1 || w.SamplesPerSec >= 0xfffff {
-				return nil, Error(fmt.Sprintf("周波数が不正です %d", w.SamplesPerSec))
+				return nil, Error(fmt.Sprintf("Frequency is invalid %d", w.SamplesPerSec))
 			}
 			var musi uint32
 			if err := read(&musi); err != nil {
@@ -378,7 +378,7 @@ func ReadWave(f *os.File, ofs int64) (*Wave, error) {
 				return nil, err
 			}
 			if w.BytesPerSample != 8 && w.BytesPerSample != 16 {
-				return nil, Error("bit数が不正です")
+				return nil, Error("The number of bits is invalid")
 			}
 			w.BytesPerSample >>= 3
 		case "data":
@@ -393,7 +393,7 @@ func ReadWave(f *os.File, ofs int64) (*Wave, error) {
 	}
 	if fmtSize == 0 {
 		if dataSize > 0 {
-			return nil, Error("fmt がありません")
+			return nil, Error("There is no fmt")
 		}
 		return nil, nil
 	}
@@ -419,7 +419,7 @@ func LoadSnd(filename string) (*Snd, error) {
 		return nil, err
 	}
 	if string(buf[:n]) != "ElecbyteSnd\x00" {
-		return nil, Error("ElecbyteSndではありません")
+		return nil, Error("It is not ElecbyteSnd")
 	}
 	read := func(x interface{}) error {
 		return binary.Read(f, binary.LittleEndian, x)
@@ -510,7 +510,7 @@ func (s *Sound) SetVolume(vol int32) {
 	}
 }
 func (s *Sound) SetPan(pan float32, offset *float32) {
-	// 未実装
+	//  Unimplemented //未実装
 }
 
 type Sounds []Sound

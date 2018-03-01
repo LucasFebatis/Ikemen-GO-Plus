@@ -1520,7 +1520,7 @@ func (s *System) fight() (reload bool) {
 		}
 		x = s.cam.XBound(scl, MinF(x+l+tmp, MaxF(x+r-tmp, newx)))
 		if !s.cam.ZoomEnable {
-			// Pos X の誤差が出ないように精度を落とす
+			// Reduce accuracy so that no error of Pos X
 			x = float32(math.Ceil(float64(x)*4-0.5) / 4)
 		}
 		y = s.cam.YBound(scl, newy)

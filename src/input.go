@@ -1145,7 +1145,7 @@ func (ni *NetInput) writeI32(i32 int32) error {
 }
 func (ni *NetInput) Synchronize() error {
 	if !ni.IsConnected() || ni.st == NS_Error {
-		return Error("接続がありません。")
+		return Error("There is no connection.")
 	}
 	ni.Stop()
 	var seed int32
@@ -1168,7 +1168,7 @@ func (ni *NetInput) Synchronize() error {
 	if tmp, err := ni.readI32(); err != nil {
 		return err
 	} else if tmp != ni.time {
-		return Error("同期エラーです。")
+		return Error("Synchronization error.")
 	}
 	ni.buf[ni.locIn].reset(ni.time)
 	ni.buf[ni.remIn].reset(ni.time)
@@ -1900,7 +1900,7 @@ func (cl *CommandList) Input(i int, facing int32) bool {
 	}
 	step := cl.Buffer.Bb != 0
 	if i < 0 && ^i < len(sys.aiInput) {
-		sys.aiInput[^i].Update() // 乱数を使うので同期がずれないようここで
+		sys.aiInput[^i].Update() // Here so that the synchronization is not shifted because it uses a random number // 乱数を使うので同期がずれないようここで
 	}
 	_else := i < 0
 	if _else {

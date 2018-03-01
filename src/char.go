@@ -854,7 +854,7 @@ func (e *Explod) setPos(c *Char) {
 		}
 	case PT_F, PT_B:
 		e.facing = c.facing * float32(e.relativef)
-		// front と back はバインドの都合で left か right になおす
+		// Front and back are left or right for binding reasons // front と back はバインドの都合で left か right になおす
 		if c.facing > 0 && e.postype == PT_F || c.facing < 0 && e.postype == PT_B {
 			if e.postype == PT_B {
 				e.offset[0] *= -1
@@ -862,9 +862,9 @@ func (e *Explod) setPos(c *Char) {
 			e.postype = PT_R
 			rPos()
 		} else {
-			// explod の postype = front はキャラの向きで pos が反転しない
+			// The postype = front of explod is the direction of the character and pos is not inverted // explod の postype = front はキャラの向きで pos が反転しない
 			if e.postype == PT_F && c.gi().ver[0] != 1 {
-				// 旧バージョンだと front は キャラの向きが facing に反映されない
+				// If it is an old version front is not reflected in facing orientation of the character // 旧バージョンだと front は キャラの向きが facing に反映されない
 				e.facing = float32(e.relativef)
 			}
 			e.postype = PT_L
@@ -2017,7 +2017,7 @@ func (c *Char) parent() *Char {
 		return nil
 	}
 	if c.parentIndex < 0 && !sys.ignoreMostErrors {
-		sys.errLog.Println(c.name + " によるすでに削除された親ヘルパーへのリダイレクト")
+		sys.errLog.Println("Already redirected to the deleted parent helper by " + c.name)
 	}
 	return sys.chars[c.playerNo][Abs(c.parentIndex)]
 }
@@ -2476,7 +2476,7 @@ func (c *Char) playSound(f, lowpriority, loop bool, g, n, chNo, vol int32,
 		}
 	}
 	if w == nil && !sys.ignoreMostErrors {
-		str := "存在しないサウンド: "
+		str := "Sound that does not exist: "
 		if f {
 			str += "F:"
 		} else {
@@ -2528,7 +2528,7 @@ func (c *Char) stateChange1(no int32, pn int) bool {
 	}
 	var ok bool
 	if c.ss.sb, ok = sys.cgi[pn].states[no]; !ok {
-		sys.errLog.Printf("存在しないステート: P%v:%v\n", pn+1, no)
+		sys.errLog.Printf("Non-existent state:: P%v:%v\n", pn+1, no)
 		c.ss.sb = *newStateBytecode(pn)
 		c.ss.sb.stateType, c.ss.sb.moveType, c.ss.sb.physics = ST_U, MT_U, ST_U
 	}
@@ -2811,7 +2811,7 @@ func (c *Char) getAnim(n int32, ffx bool) (a *Animation) {
 		a = c.gi().anim.get(n)
 	}
 	if a == nil && !sys.ignoreMostErrors {
-		str := "存在しないアニメ: "
+		str := "Animation does not exist:"
 		if ffx {
 			str += "F:"
 		} else {

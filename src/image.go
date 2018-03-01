@@ -276,7 +276,7 @@ func (sh *SffHeader) Read(r io.Reader, lofs *uint32, tofs *uint32) error {
 		return err
 	}
 	if string(buf[:n]) != "ElecbyteSpr\x00" {
-		return Error("ElecbyteSprではありません")
+		return Error("It is not ElecbyteSpr")
 	}
 	read := func(x interface{}) error {
 		return binary.Read(r, binary.LittleEndian, x)
@@ -337,7 +337,7 @@ func (sh *SffHeader) Read(r io.Reader, lofs *uint32, tofs *uint32) error {
 			return err
 		}
 	default:
-		return Error("バージョンが不正です")
+		return Error("Version is invalid")
 	}
 	return nil
 }
@@ -428,7 +428,7 @@ func loadFromSff(filename string, g, n int16) (*Sprite, error) {
 			ip := len(newSubHeaderOffset)
 			for size == 0 {
 				if int(indexOfPrevious) >= ip {
-					return nil, Error("linkが不正です")
+					return nil, Error("link is invalid")
 				}
 				ip = int(indexOfPrevious)
 				if h.Ver0 == 1 {
@@ -464,7 +464,7 @@ func loadFromSff(filename string, g, n int16) (*Sprite, error) {
 		}
 	}
 	if i == int(h.NumberOfSprites) {
-		return nil, Error(fmt.Sprintf("%v, %v のスプライトが見つかりません", g, n))
+		return nil, Error(fmt.Sprintf("No sprites found %v, %v", g, n))
 	}
 	if h.Ver0 == 1 {
 		s.Pal = pl.Get(s.palidx)
@@ -578,7 +578,7 @@ func (s *Sprite) readPcxHeader(f *os.File, offset int64) error {
 		return err
 	}
 	if bpp != 8 {
-		return Error("256色でありません")
+		return Error("It is not 256 colors")
 	}
 	var rect [4]uint16
 	if err := read(rect[:]); err != nil {
@@ -634,7 +634,7 @@ func (s *Sprite) RlePcxDecode(rle []byte) (p []byte) {
 func (s *Sprite) read(f *os.File, sh *SffHeader, offset int64, datasize uint32,
 	nextSubheader uint32, prev *Sprite, pl *PaletteList, c00 bool) error {
 	if int64(nextSubheader) > offset {
-		// 最後以外datasizeを無視
+		// Ignore datasize except last OR Ignore the last non-datasize // 最後以外datasizeを無視
 		datasize = nextSubheader - uint32(offset)
 	}
 	read := func(x interface{}) error {
@@ -940,7 +940,7 @@ func (s *Sprite) readV2(f *os.File, offset int64, datasize uint32) error {
 			}
 			return nil
 		default:
-			return Error("不明な形式です")
+			return Error("Unknown format")
 		}
 		s.SetPxl(px)
 	}
@@ -1069,7 +1069,7 @@ func loadSff(filename string, char bool) (*Sff, error) {
 					dst.shareCopy(src)
 				}
 			} else {
-				spriteList[i].palidx = 0 // 不正な sff の場合の index out of range 防止
+				spriteList[i].palidx = 0 // Index out of range prevention in case of illegal sff // 不正な sff の場合の index out of range 防止
 			}
 		} else {
 			switch s.header.Ver0 {
@@ -1107,7 +1107,7 @@ func (s *Sff) GetSprite(g, n int16) *Sprite {
 	return s.sprites[[...]int16{g, n}]
 }
 func (s *Sff) getOwnPalSprite(g, n int16) *Sprite {
-	sys.runMainThreadTask() // テクスチャを生成
+	sys.runMainThreadTask() // Generate texture // テクスチャを生成
 	sp := s.GetSprite(g, n)
 	if sp == nil {
 		return nil

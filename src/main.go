@@ -103,7 +103,7 @@ func main() {
       "Buttons":["t","g","f","h","j","k","l","u","i","o","RSHIFT","LEFTBRACKET","RIGHTBRACKET"]
     }],
   "_comment":{
-    "_comment":"ジョイスティック (0番) の場合の KeyConfig",
+    "_comment":"KeyConfig for joystick (0)",
     "KeyConfig":[{
         "Joystick":0,
         "Buttons":["-7","-8","-5","-6","0","1","4","2","3","5","7","6","8"]

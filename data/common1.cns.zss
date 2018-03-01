@@ -1,5 +1,20 @@
 # Zantei State Script
 
+# Google Translation:
+# The character code is UTF-8
+# && and || are short circuit evaluations
+# ignorehitpause{} The part surrounded by {} is executed even during hit pause
+# include # ignorehitpause {} will also be executed
+# Explod can optionally specify ignorehitpause
+# ignorehitpause persistent (2) if 1 {} Specify multiple characteristics of a block if
+# VarSet, VarAdd can not be used Instead of it: you can write expressions containing assignments with: =
+# Add assignment to the end of the assignment expression
+# Separate let variable name = trigger expression; can be assigned to local variable
+# $ It can be used in a trigger expression with a variable name, but can not be assigned with: = =
+# Variable names are abandoned for assignment to [a - z _] [0 - 9 a - z _] *, _
+# Up to 256 local variables including arguments and return values
+# Because functions can only be called predefined, recursion can not be done
+
 # 文字コードは utf-8
 # && と || は短絡評価
 # ignorehitpause{} で囲んだ部分はヒットポーズ中でも実行される

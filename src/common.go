@@ -509,7 +509,7 @@ func (is IniSection) getText(name string) (str string, ok bool, err error) {
 		return
 	}
 	if len(str) < 2 || str[0] != '"' || str[len(str)-1] != '"' {
-		return "", false, Error("\"で囲まれていません")
+		return "", false, Error("It is not enclosed by \"")
 	}
 	str = str[1 : len(str)-1]
 	return
