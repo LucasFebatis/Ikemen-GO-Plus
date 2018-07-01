@@ -241,21 +241,24 @@ func FileExist(filename string) string {
 	}
 	return ""
 }
-func LoadFile(file *string, deffile string, load func(string) error) error {
+
+//SearchFile returns the directory that file is located
+//This search on deffile directory, then it keep looking on other dirs
+func SearchFile(file string, deffile string) string {
 	var fp string
-	*file = strings.Replace(*file, "\\", "/", -1)
+	file = strings.Replace(file, "\\", "/", -1)
 	defdir := filepath.Dir(strings.Replace(deffile, "\\", "/", -1))
 	if defdir == "." {
-		fp = *file
+		fp = file
 	} else if defdir == "/" {
-		fp = "/" + *file
+		fp = "/" + file
 	} else {
-		fp = defdir + "/" + *file
+		fp = defdir + "/" + file
 	}
 	if fp = FileExist(fp); len(fp) == 0 {
 		_else := false
 		if defdir != "data" {
-			fp = "data/" + *file
+			fp = "data/" + file
 			if fp = FileExist(fp); len(fp) == 0 {
 				_else = true
 			}
@@ -263,12 +266,18 @@ func LoadFile(file *string, deffile string, load func(string) error) error {
 			_else = true
 		}
 		if _else {
-			fp = *file
+			fp = file
 			if fp = FileExist(fp); len(fp) == 0 {
-				fp = *file
+				fp = file
 			}
 		}
 	}
+
+	return fp
+}
+
+func LoadFile(file *string, deffile string, load func(string) error) error {
+	fp := SearchFile(*file, deffile)
 	if err := load(fp); err != nil {
 		return Error(deffile + ":\n" + fp + "\n" + err.Error())
 	}
@@ -363,7 +372,10 @@ func (e Error) Error() string { return string(e) }
 
 type IniSection map[string]string
 
-func NewIniSection() IniSection { return IniSection(make(map[string]string)) }
+func NewIniSection() IniSection {
+	return IniSection(make(map[string]string))
+}
+
 func ReadIniSection(lines []string, i *int) (
 	is IniSection, name string, subname string) {
 	for ; *i < len(lines); (*i)++ {
@@ -401,14 +413,14 @@ func (is IniSection) Parse(lines []string, i *int) {
 		}
 	}
 }
-func (is IniSection) LoadFile(name, deffile string,
-	load func(string) error) error {
+func (is IniSection) LoadFile(name, deffile string, load func(string) error) error {
 	str := is[name]
 	if len(str) == 0 {
 		return nil
 	}
 	return LoadFile(&str, deffile, load)
 }
+
 func (is IniSection) ReadI32(name string, out ...*int32) bool {
 	str := is[name]
 	if len(str) == 0 {

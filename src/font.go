@@ -191,7 +191,7 @@ func loadFntV1(filename string) (*Fnt, error) {
 				defflg = false
 				is := NewIniSection()
 				is.Parse(lines, &i)
-				loadDefInfo(f, is)
+				loadDefInfo(f, filename, is)
 			}
 		}
 	}
@@ -257,7 +257,7 @@ func loadFntV2(filename string) (*Fnt, error) {
 			i--
 			switch name {
 			case "def":
-				loadDefInfo(f, is)
+				loadDefInfo(f, filename, is)
 			}
 		}
 	}
@@ -265,7 +265,7 @@ func loadFntV2(filename string) (*Fnt, error) {
 	return f, nil
 }
 
-func loadDefInfo(f *Fnt, is IniSection) {
+func loadDefInfo(f *Fnt, filename string, is IniSection) {
 	ary := SplitAndTrim(is["size"], ",")
 	if len(ary[0]) > 0 {
 		f.Size[0] = I32ToU16(Atoi(ary[0]))
@@ -295,13 +295,12 @@ func loadDefInfo(f *Fnt, is IniSection) {
 	}
 
 	if len(is["file"]) > 0 {
-		loadFntSff(f, is["file"])
+		loadFntSff(f, filename, is["file"])
 	}
 }
 
-func loadFntSff(f *Fnt, filename string) {
-	//hardcoded dir for testing purpose
-	fileDir := "font/" + filename
+func loadFntSff(f *Fnt, fontfile string, filename string) {
+	fileDir := SearchFile(filename, fontfile)
 	sff, err := loadSff(fileDir, false)
 
 	if err != nil {
@@ -400,7 +399,7 @@ func (f *Fnt) drawChar(
 	return float32(spr.Size[0]) * xscl
 }
 
-//DrawText print on screen a specified text with the current font sprites
+//DrawText prints on screen a specified text with the current font sprites
 func (f *Fnt) DrawText(
 	txt string,
 	x, y, xscl, yscl float32,
