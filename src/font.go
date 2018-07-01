@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -234,8 +233,6 @@ func loadFntV1(filename string) (*Fnt, error) {
 		}
 	}
 
-	fmt.Println(f.TextWidth("hola"))
-
 	return f, nil
 }
 
@@ -264,8 +261,6 @@ func loadFntV2(filename string) (*Fnt, error) {
 			}
 		}
 	}
-
-	fmt.Println(f.TextWidth("hola"))
 
 	return f, nil
 }
@@ -337,6 +332,7 @@ func loadFntSff(f *Fnt, filename string) {
 
 }
 
+//CharWidth returns the width that has a specified character
 func (f *Fnt) CharWidth(c rune) int32 {
 	if c == ' ' {
 		return int32(f.Size[0])
@@ -348,6 +344,8 @@ func (f *Fnt) CharWidth(c rune) int32 {
 	return int32(fci.w)
 }
 
+//TextWidth returns the width that has a specified text.
+//This depends on each char's width and font spacing
 func (f *Fnt) TextWidth(txt string) (w int32) {
 	for _, c := range txt {
 		w += f.CharWidth(c) + f.Spacing[0]
@@ -402,6 +400,7 @@ func (f *Fnt) drawChar(
 	return float32(spr.Size[0]) * xscl
 }
 
+//DrawText print on screen a specified text with the current font sprites
 func (f *Fnt) DrawText(
 	txt string,
 	x, y, xscl, yscl float32,
