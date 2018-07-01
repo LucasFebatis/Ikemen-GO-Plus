@@ -2,17 +2,21 @@ package main
 
 import (
 	"encoding/binary"
-	"github.com/go-gl/gl/v2.1/gl"
 	"os"
 	"regexp"
 	"strings"
 	"unsafe"
+
+	"github.com/go-gl/gl/v2.1/gl"
 )
 
+// FntCharImage stores sprite and position
 type FntCharImage struct {
 	ofs, w uint16
 	img    []Sprite
 }
+
+// Fnt is a interface for basic font information
 type Fnt struct {
 	images    map[rune]*FntCharImage
 	palettes  [][256]uint32
@@ -23,53 +27,86 @@ type Fnt struct {
 	offset    [2]int32
 }
 
-func newFnt() *Fnt { return &Fnt{images: make(map[rune]*FntCharImage)} }
+func newFnt() *Fnt {
+	return &Fnt{
+		images: make(map[rune]*FntCharImage),
+	}
+}
+
 func loadFnt(filename string) (*Fnt, error) {
+
+	if strings.HasSuffix(filename, ".fnt") {
+		return loadFntV1(filename)
+	}
+
+	return loadFntV2(filename)
+}
+
+func loadFntV1(filename string) (*Fnt, error) {
 	f := newFnt()
 	fp, err := os.Open(filename)
+
+	//Error opening file
 	if err != nil {
 		return nil, err
 	}
+
 	defer func() { chk(fp.Close()) }()
+
+	//Read header
 	buf := make([]byte, 12)
-	var n int
-	if n, err = fp.Read(buf); err != nil {
+	n, err := fp.Read(buf)
+
+	//Error reading file
+	if err != nil {
 		return nil, err
 	}
+
+	//Error is not a valid fnt file
 	if string(buf[:n]) != "ElecbyteFnt\x00" {
 		return nil, Error("ElecbyteFntではありません")
 	}
+
 	read := func(x interface{}) error {
 		return binary.Read(fp, binary.LittleEndian, x)
 	}
+
 	if err := read(&f.ver); err != nil {
 		return nil, err
 	}
+
 	if err := read(&f.ver2); err != nil {
 		return nil, err
 	}
+
 	var pcxDataOffset, pcxDataLenght, txtDataOffset, txtDataLenght uint32
 	if err := read(&pcxDataOffset); err != nil {
 		return nil, err
 	}
+
 	if err := read(&pcxDataLenght); err != nil {
 		return nil, err
 	}
+
 	if err := read(&txtDataOffset); err != nil {
 		return nil, err
 	}
+
 	if err := read(&txtDataLenght); err != nil {
 		return nil, err
 	}
+
 	spr := newSprite()
 	if err := spr.readPcxHeader(fp, int64(pcxDataOffset)); err != nil {
 		return nil, err
 	}
+
 	fp.Seek(int64(pcxDataOffset)+128, 0)
 	px := make([]byte, pcxDataLenght-128-768)
 	if err := read(px); err != nil {
 		return nil, err
 	}
+
 	spr.Pal = make([]uint32, 256)
 	var rgb [3]byte
 	for i := range spr.Pal {
@@ -78,6 +115,7 @@ func loadFnt(filename string) (*Fnt, error) {
 		}
 		spr.Pal[i] = uint32(rgb[2])<<16 | uint32(rgb[1])<<8 | uint32(rgb[0])
 	}
+
 	px = spr.RlePcxDecode(px)
 	fp.Seek(int64(txtDataOffset), 0)
 	buf = make([]byte, txtDataLenght)
@@ -153,33 +191,7 @@ func loadFnt(filename string) (*Fnt, error) {
 				defflg = false
 				is := NewIniSection()
 				is.Parse(lines, &i)
-				ary := SplitAndTrim(is["size"], ",")
-				if len(ary[0]) > 0 {
-					f.Size[0] = I32ToU16(Atoi(ary[0]))
-				}
-				if len(ary) > 1 && len(ary[1]) > 0 {
-					f.Size[1] = I32ToU16(Atoi(ary[1]))
-				}
-				ary = SplitAndTrim(is["spacing"], ",")
-				if len(ary[0]) > 0 {
-					f.Spacing[0] = Atoi(ary[0])
-				}
-				if len(ary) > 1 && len(ary[1]) > 0 {
-					f.Spacing[1] = Atoi(ary[1])
-				}
-				f.colors = Atoi(is["colors"])
-				if f.colors > 255 {
-					f.colors = 255
-				} else if f.colors < 1 {
-					f.colors = 1
-				}
-				ary = SplitAndTrim(is["offset"], ",")
-				if len(ary[0]) > 0 {
-					f.offset[0] = Atoi(ary[0])
-				}
-				if len(ary) > 1 && len(ary[1]) > 0 {
-					f.offset[1] = Atoi(ary[1])
-				}
+				loadDefInfo(f, is)
 			}
 		}
 	}
@@ -220,8 +232,100 @@ func loadFnt(filename string) (*Fnt, error) {
 			fci.img[i].Offset[0], fci.img[i].Offset[1], fci.img[i].Pal = 0, 0, p[:]
 		}
 	}
+
 	return f, nil
 }
+
+func loadFntV2(filename string) (*Fnt, error) {
+	f := newFnt()
+
+	content, err := LoadText(filename)
+	if err != nil {
+		return nil, err
+	}
+
+	lines := SplitAndTrim(string(content), "\n")
+	i := 0
+	var name string
+
+	for ; i < len(lines); i++ {
+		name, _ = SectionName(lines[i])
+		if len(name) > 0 {
+			is := NewIniSection()
+			i++
+			is.Parse(lines, &i)
+			i--
+			switch name {
+			case "def":
+				loadDefInfo(f, is)
+			}
+		}
+	}
+
+	return f, nil
+}
+
+func loadDefInfo(f *Fnt, is IniSection) {
+	ary := SplitAndTrim(is["size"], ",")
+	if len(ary[0]) > 0 {
+		f.Size[0] = I32ToU16(Atoi(ary[0]))
+	}
+	if len(ary) > 1 && len(ary[1]) > 0 {
+		f.Size[1] = I32ToU16(Atoi(ary[1]))
+	}
+	ary = SplitAndTrim(is["spacing"], ",")
+	if len(ary[0]) > 0 {
+		f.Spacing[0] = Atoi(ary[0])
+	}
+	if len(ary) > 1 && len(ary[1]) > 0 {
+		f.Spacing[1] = Atoi(ary[1])
+	}
+	f.colors = Atoi(is["colors"])
+	if f.colors > 255 {
+		f.colors = 255
+	} else if f.colors < 1 {
+		f.colors = 1
+	}
+	ary = SplitAndTrim(is["offset"], ",")
+	if len(ary[0]) > 0 {
+		f.offset[0] = Atoi(ary[0])
+	}
+	if len(ary) > 1 && len(ary[1]) > 0 {
+		f.offset[1] = Atoi(ary[1])
+	}
+
+	if len(is["file"]) > 0 {
+		loadFntSff(f, is["file"])
+	}
+}
+
+func loadFntSff(f *Fnt, filename string) {
+	//hardcoded dir for testing purpose
+	fileDir := "font/" + filename
+	sff, err := loadSff(fileDir, false)
+
+	if err != nil {
+		panic(err)
+	}
+
+	//Load sprites
+	for k, sprite := range sff.sprites {
+		fci := &FntCharImage{ofs: 0, w: 0}
+		fci.img = make([]Sprite, 1)
+		s := sff.getOwnPalSprite(sprite.Group, sprite.Number)
+		fci.img[0] = *s
+		f.images[rune(k[1])] = fci
+	}
+
+	//Load palettes
+	f.palettes = make([][256]uint32, sff.header.NumberOfPalettes)
+	for i := 0; i < int(sff.header.NumberOfPalettes); i++ {
+		pal := sff.palList.Get(i)
+		copy(f.palettes[i][:], pal)
+	}
+
+}
+
 func (f *Fnt) CharWidth(c rune) int32 {
 	if c == ' ' {
 		return int32(f.Size[0])
@@ -232,12 +336,14 @@ func (f *Fnt) CharWidth(c rune) int32 {
 	}
 	return int32(fci.w)
 }
+
 func (f *Fnt) TextWidth(txt string) (w int32) {
 	for _, c := range txt {
 		w += f.CharWidth(c) + f.Spacing[0]
 	}
 	return
 }
+
 func (f *Fnt) getCharSpr(c rune, bank int32) *Sprite {
 	fci := f.images[c]
 	if fci == nil {
@@ -245,37 +351,69 @@ func (f *Fnt) getCharSpr(c rune, bank int32) *Sprite {
 	}
 	return &fci.img[bank]
 }
-func (f *Fnt) drawChar(x, y, xscl, yscl float32, bank int32, c rune,
-	paltex uint32) float32 {
+
+func (f *Fnt) drawChar(
+	x, y, xscl, yscl float32,
+	bank int32,
+	c rune,
+	paltex uint32,
+) float32 {
+
 	if c == ' ' {
 		return float32(f.Size[0]) * xscl
 	}
+
 	spr := f.getCharSpr(c, bank)
 	if spr == nil || spr.Tex == nil {
 		return 0
 	}
-	RenderMugenPal(*spr.Tex, paltex, 0, spr.Size, -x*sys.widthScale,
-		-y*sys.heightScale, &notiling, xscl*sys.widthScale, xscl*sys.widthScale,
-		yscl*sys.heightScale, 1, 0, 0, sys.brightness*255>>8|1<<9, &sys.scrrect,
-		0, 0)
+
+	RenderMugenPal(
+		*spr.Tex,
+		paltex,
+		0,
+		spr.Size,
+		-x*sys.widthScale,
+		-y*sys.heightScale,
+		&notiling,
+		xscl*sys.widthScale,
+		xscl*sys.widthScale,
+		yscl*sys.heightScale,
+		1,
+		0,
+		0,
+		sys.brightness*255>>8|1<<9,
+		&sys.scrrect,
+		0,
+		0,
+	)
+
 	return float32(spr.Size[0]) * xscl
 }
-func (f *Fnt) DrawText(txt string, x, y, xscl, yscl float32,
-	bank, align int32) {
+
+func (f *Fnt) DrawText(
+	txt string,
+	x, y, xscl, yscl float32,
+	bank, align int32,
+) {
+
 	if len(txt) == 0 {
 		return
 	}
+
 	x += float32(f.offset[0])*xscl + float32(sys.gameWidth-320)/2
-	y += float32(f.offset[1]-int32(f.Size[1])+1)*yscl +
-		float32(sys.gameHeight-240)
+	y += float32(f.offset[1]-int32(f.Size[1])+1)*yscl + float32(sys.gameHeight-240)
+
 	if align == 0 {
 		x -= float32(f.TextWidth(txt)) * xscl * 0.5
 	} else if align < 0 {
 		x -= float32(f.TextWidth(txt)) * xscl
 	}
+
 	if bank < 0 || len(f.palettes) <= int(bank) {
 		bank = 0
 	}
+
 	// nil から呼ぶと allPalFX が適用される
 	pal := (*PalFX)(nil).getFxPal(f.palettes[bank][:], false)
 	gl.Enable(gl.TEXTURE_1D)
@@ -284,13 +422,28 @@ func (f *Fnt) DrawText(txt string, x, y, xscl, yscl float32,
 	gl.GenTextures(1, &paltex)
 	gl.BindTexture(gl.TEXTURE_1D, paltex)
 	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
-	gl.TexImage1D(gl.TEXTURE_1D, 0, gl.RGBA, 256, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-		unsafe.Pointer(&pal[0]))
+	gl.TexImage1D(
+		gl.TEXTURE_1D,
+		0,
+		gl.RGBA,
+		256,
+		0,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		unsafe.Pointer(&pal[0]),
+	)
 	gl.TexParameteri(gl.TEXTURE_1D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_1D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 	for _, c := range txt {
-		x += f.drawChar(x, y, xscl, yscl, bank, c, paltex) +
-			xscl*float32(f.Spacing[0])
+		x += f.drawChar(
+			x,
+			y,
+			xscl,
+			yscl,
+			bank,
+			c,
+			paltex,
+		) + xscl*float32(f.Spacing[0])
 	}
 	gl.DeleteTextures(1, &paltex)
 	gl.Disable(gl.TEXTURE_1D)
