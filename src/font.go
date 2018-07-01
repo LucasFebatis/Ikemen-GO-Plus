@@ -357,7 +357,12 @@ func (f *Fnt) getCharSpr(c rune, bank int32) *Sprite {
 	if fci == nil {
 		return nil
 	}
-	return &fci.img[bank]
+
+	if bank < int32(len(fci.img)) {
+		return &fci.img[bank]
+	}
+
+	return &fci.img[0]
 }
 
 func (f *Fnt) drawChar(
