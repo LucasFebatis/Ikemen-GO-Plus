@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -233,6 +234,8 @@ func loadFntV1(filename string) (*Fnt, error) {
 		}
 	}
 
+	fmt.Println(f.TextWidth("hola"))
+
 	return f, nil
 }
 
@@ -261,6 +264,8 @@ func loadFntV2(filename string) (*Fnt, error) {
 			}
 		}
 	}
+
+	fmt.Println(f.TextWidth("hola"))
 
 	return f, nil
 }
@@ -310,9 +315,15 @@ func loadFntSff(f *Fnt, filename string) {
 
 	//Load sprites
 	for k, sprite := range sff.sprites {
-		fci := &FntCharImage{ofs: 0, w: 0}
-		fci.img = make([]Sprite, 1)
 		s := sff.getOwnPalSprite(sprite.Group, sprite.Number)
+		offsetX := uint16(s.Offset[0])
+		sizeX := uint16(s.Size[0])
+
+		fci := &FntCharImage{
+			ofs: offsetX,
+			w:   sizeX,
+		}
+		fci.img = make([]Sprite, 1)
 		fci.img[0] = *s
 		f.images[rune(k[1])] = fci
 	}
