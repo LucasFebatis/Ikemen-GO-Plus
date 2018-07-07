@@ -1174,7 +1174,7 @@ for i = 1, #t_exlude do
 	main.f_addChar(t_exlude[i], chars)
 end
 --add Training by stupa if not included in select.def
-if main.t_charDef.training == nil and main.f_fileExists('chars/training/training.def') then
+if main.t_charDef.training == nil and main.f_fileExists('chars/training/Training.def') then
 	chars = chars + 1
 	main.f_addChar('training, exclude = 1', chars)
 end
