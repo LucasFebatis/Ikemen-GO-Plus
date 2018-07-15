@@ -7,6 +7,8 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/K4thos/glfont"
+	"github.com/flopp/go-findfont"
 	"github.com/go-gl/gl/v2.1/gl"
 )
 
@@ -21,15 +23,21 @@ type Fnt struct {
 	images    map[rune]*FntCharImage
 	palettes  [][256]uint32
 	ver, ver2 uint16
+	Type      string
 	Size      [2]uint16
 	Spacing   [2]int32
 	colors    int32
 	offset    [2]int32
+	ttf       *glfont.Font
+	palfx     *PalFX
+	alphaSrc  int32
+	alphaDst  int32
 }
 
 func newFnt() *Fnt {
 	return &Fnt{
 		images: make(map[rune]*FntCharImage),
+		palfx:  newPalFX(),
 	}
 }
 
@@ -233,6 +241,8 @@ func loadFntV1(filename string) (*Fnt, error) {
 		}
 	}
 
+	f.SetColor(255, 255, 255, 255, 0)
+
 	return f, nil
 }
 
@@ -262,10 +272,13 @@ func loadFntV2(filename string) (*Fnt, error) {
 		}
 	}
 
+	f.SetColor(255, 255, 255, 255, 0)
+
 	return f, nil
 }
 
 func loadDefInfo(f *Fnt, filename string, is IniSection) {
+	f.Type = strings.ToLower(is["type"])
 	ary := SplitAndTrim(is["size"], ",")
 	if len(ary[0]) > 0 {
 		f.Size[0] = I32ToU16(Atoi(ary[0]))
@@ -295,8 +308,33 @@ func loadDefInfo(f *Fnt, filename string, is IniSection) {
 	}
 
 	if len(is["file"]) > 0 {
-		loadFntSff(f, filename, is["file"])
+		if f.Type == "truetype" {
+			loadFntTtf(f, filename, is["file"])
+		} else {
+			loadFntSff(f, filename, is["file"])
+		}
 	}
+}
+
+func loadFntTtf(f *Fnt, fontfile string, filename string) {
+	//Search in local directory
+	fileDir := SearchFile(filename, fontfile)
+	//Search in system directory
+	fp := fileDir
+	if fp = FileExist(fp); len(fp) == 0 {
+		var err error
+		fileDir, err = findfont.Find(fileDir)
+		if err != nil {
+			panic(err)
+		}
+		//fmt.Printf("Found font in '%s'\n", fileDir)
+	}
+	//Load ttf
+	ttf, err := glfont.LoadFont(fileDir, int32(f.Size[1]), int(sys.gameWidth), int(sys.gameHeight))
+	if err != nil {
+		panic(err)
+	}
+	f.ttf = ttf
 }
 
 func loadFntSff(f *Fnt, fontfile string, filename string) {
@@ -352,6 +390,24 @@ func (f *Fnt) TextWidth(txt string) (w int32) {
 	return
 }
 
+func (f *Fnt) SetColor(r, g, b, alphaSrc, alphaDst float32) {
+
+	rNormalized := Max(0, Min(255, int32(r)))
+	gNormalized := Max(0, Min(255, int32(g)))
+	bNormalized := Max(0, Min(255, int32(b)))
+
+	f.palfx.enable = true
+	f.palfx.eColor = 1
+	f.palfx.eMul = [...]int32{
+		256 * rNormalized >> 8,
+		256 * gNormalized >> 8,
+		256 * bNormalized >> 8,
+	}
+
+	f.alphaSrc = Max(0, Min(255, int32(alphaSrc)))
+	f.alphaDst = Max(0, Min(255, int32(alphaDst)))
+}
+
 func (f *Fnt) getCharSpr(c rune, bank int32) *Sprite {
 	fci := f.images[c]
 	if fci == nil {
@@ -363,6 +419,14 @@ func (f *Fnt) getCharSpr(c rune, bank int32) *Sprite {
 	}
 
 	return &fci.img[0]
+}
+
+func (f *Fnt) calculateTrans() int32 {
+	alphaSrc := int32(sys.brightness * f.alphaSrc >> 8)
+	separator := int32(1 << 9)
+	alphaDst := int32(f.alphaDst << 10)
+
+	return alphaSrc | separator | alphaDst
 }
 
 func (f *Fnt) drawChar(
@@ -381,6 +445,8 @@ func (f *Fnt) drawChar(
 		return 0
 	}
 
+	trans := f.calculateTrans()
+
 	RenderMugenPal(
 		*spr.Tex,
 		paltex,
@@ -395,7 +461,7 @@ func (f *Fnt) drawChar(
 		1,
 		0,
 		0,
-		sys.brightness*255>>8|1<<9,
+		trans,
 		&sys.scrrect,
 		0,
 		0,
@@ -428,8 +494,7 @@ func (f *Fnt) DrawText(
 		bank = 0
 	}
 
-	// nil から呼ぶと allPalFX が適用される
-	pal := (*PalFX)(nil).getFxPal(f.palettes[bank][:], false)
+	pal := f.palfx.getFxPal(f.palettes[bank][:], false)
 	gl.Enable(gl.TEXTURE_1D)
 	gl.ActiveTexture(gl.TEXTURE1)
 	var paltex uint32
@@ -448,6 +513,7 @@ func (f *Fnt) DrawText(
 	)
 	gl.TexParameteri(gl.TEXTURE_1D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 	gl.TexParameteri(gl.TEXTURE_1D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+
 	for _, c := range txt {
 		x += f.drawChar(
 			x,
@@ -473,8 +539,21 @@ type TextSprite struct {
 func NewTextSprite() *TextSprite {
 	return &TextSprite{align: 1, xscl: 1, yscl: 1}
 }
+
+func (ts *TextSprite) SetColor(r, g, b, alphaSrc, alphaDst float32) {
+	if ts.fnt.Type == "truetype" {
+		//ts.fnt.ttf.SetColor(r, g, b, a)
+	} else {
+		ts.fnt.SetColor(r, g, b, alphaSrc, alphaDst)
+	}
+}
+
 func (ts *TextSprite) Draw() {
 	if !sys.frameSkip && ts.fnt != nil {
-		ts.fnt.DrawText(ts.text, ts.x, ts.y, ts.xscl, ts.yscl, ts.bank, ts.align)
+		if ts.fnt.Type == "truetype" {
+			//ts.fnt.ttf.Printf(ts.x, ts.y, ts.yscl, ts.align, ts.text) //x, y, scale, align, string, printf args
+		} else {
+			ts.fnt.DrawText(ts.text, ts.x, ts.y, ts.xscl, ts.yscl, ts.bank, ts.align)
+		}
 	}
 }

@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/yuin/gopher-lua"
+	"math/rand"
 	"runtime"
 	"strings"
-	"math/rand"
+
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/yuin/gopher-lua"
 )
 
 func luaRegister(l *lua.LState, name string, f func(*lua.LState) int) {
@@ -303,6 +304,23 @@ func systemScriptInit(l *lua.LState) {
 			userDataError(l, 1, ts)
 		}
 		ts.xscl, ts.yscl = float32(numArg(l, 2)), float32(numArg(l, 3))
+		return 0
+	})
+	luaRegister(l, "textImgSetColor", func(*lua.LState) int {
+		ts, ok := toUserData(l, 1).(*TextSprite)
+		if !ok {
+			userDataError(l, 1, ts)
+		}
+		r, g, b, alphaSrc, alphaDst := float32(numArg(l, 2)), float32(numArg(l, 3)), float32(numArg(l, 4)), float32(256), float32(0)
+		if l.GetTop() >= 5 {
+			alphaSrc = float32(numArg(l, 5))
+		}
+
+		if l.GetTop() >= 6 {
+			alphaDst = float32(numArg(l, 6))
+		}
+
+		ts.SetColor(r, g, b, alphaSrc, alphaDst)
 		return 0
 	})
 	luaRegister(l, "textImgDraw", func(*lua.LState) int {
@@ -833,10 +851,10 @@ func systemScriptInit(l *lua.LState) {
 							tmp.RawSetString("drawgame", lua.LBool(p[0].drawgame()))
 							tmp.RawSetString("ko", lua.LBool(p[0].scf(SCF_ko)))
 							tmp.RawSetString("ko_round_middle", lua.LBool(p[0].scf(SCF_ko_round_middle)))
-							tbl_roundNo.RawSetInt(p[0].playerNo + 1, tmp)
+							tbl_roundNo.RawSetInt(p[0].playerNo+1, tmp)
 						}
 					}
-					tbl_chars.RawSetInt(int(sys.round - 1), tbl_roundNo)
+					tbl_chars.RawSetInt(int(sys.round-1), tbl_roundNo)
 				}
 				return winp, nil
 			}
@@ -866,7 +884,7 @@ func systemScriptInit(l *lua.LState) {
 				time := int32(0)
 				tbl_time := l.NewTable()
 				for k, v := range sys.timerCount {
-					tbl_time.RawSetInt(k + 1, lua.LNumber(v))
+					tbl_time.RawSetInt(k+1, lua.LNumber(v))
 					time = time + v
 				}
 				tbl.RawSetString("chars", tbl_chars)
@@ -874,7 +892,7 @@ func systemScriptInit(l *lua.LState) {
 				tbl.RawSetString("time", lua.LNumber(time))
 				tbl.RawSetString("roundTime", lua.LNumber(sys.roundTime))
 				tbl.RawSetString("winTeam", lua.LNumber(sys.winTeam))
-				tbl.RawSetString("lastRound", lua.LNumber(sys.round - 1))
+				tbl.RawSetString("lastRound", lua.LNumber(sys.round-1))
 				tbl.RawSetString("draws", lua.LNumber(sys.draws))
 				tbl.RawSetString("P1wins", lua.LNumber(sys.wins[0]))
 				tbl.RawSetString("P2wins", lua.LNumber(sys.wins[1]))
@@ -1033,7 +1051,7 @@ func systemScriptInit(l *lua.LState) {
 		}
 		if len(pal) > 0 {
 			for k, v := range pal {
-				tbl.RawSetInt(k + 1, lua.LNumber(v))
+				tbl.RawSetInt(k+1, lua.LNumber(v))
 			}
 		} else {
 			tbl.RawSetInt(1, lua.LNumber(1))
