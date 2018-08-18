@@ -7,6 +7,7 @@ import (
 	"github.com/yuin/gopher-lua"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -32,6 +33,41 @@ func closeLog(f *os.File) {
 	f.Close()
 }
 func main() {
+	if len(os.Args[1:]) > 0 {
+		sys.cmdFlags = make(map[string]string)
+		key := ""
+		player := 1
+		for _, a := range os.Args[1:] {
+			match, _ := regexp.MatchString("^-", a)
+			if match {
+				help, _ := regexp.MatchString("^-[h%?]", a)
+				if help {
+					fmt.Println("I.K.E.M.E.N\nOptions (case sensitive):")
+					fmt.Println(" -h -?               Help")
+					fmt.Println(" -log <logfile>      Records match data to <logfile>")
+					fmt.Println(" -r <sysfile>        Loads motif <sysfile>. eg. -r motifdir or -r motifdir/system.def")
+					fmt.Println("\nQuick VS Options:")
+					fmt.Println(" -p<n> <playername>  Loads player n, eg. -p3 kfm")
+					fmt.Println(" -p<n>.ai <level>    Set player n's AI to <level>, eg. -p1.ai 8")
+					fmt.Println(" -p<n>.color <col>   Set player n's color to <col>")
+					fmt.Println(" -p<n>.life <life>   Sets player n's life to <life>")
+					fmt.Println(" -p<n>.power <power> Sets player n's power to <power>")
+					fmt.Println(" -rounds <num>       Plays for <num> rounds, and then quits")
+					fmt.Println(" -s <stagename>      Loads stage <stagename>")
+					os.Exit(0)
+				}
+
+				sys.cmdFlags[a] = ""
+				key = a
+			} else if key == "" {
+				sys.cmdFlags[fmt.Sprintf("-p%v", player)] = a
+				player += 1
+			} else {
+				sys.cmdFlags[key] = a
+				key = ""
+			}
+		}
+	}
 	chk(glfw.Init())
 	defer glfw.Terminate()
 	defcfg := []byte(strings.Join(strings.Split(`{
