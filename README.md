@@ -1,3 +1,5 @@
+For Raspberry Pi 3
+
 # Ikemen GO Plus #
 
 IKEMEN Go Plus is a fork of IKEMEN GO that aims to implement all remaining M.U.G.E.N features currently missing in the engine and add new ones on top of it in order to make the engine more flexible and better suited for full games.
