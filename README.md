@@ -1,7 +1,9 @@
 For Raspberry Pi 3
 
 Install GLFW:
+
 For Got b'X11: RandR gamma ramp support seems broken
+
 `sudo apt-get install freeglut3-dev`
 
 # Ikemen GO Plus #
