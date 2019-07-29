@@ -3,6 +3,8 @@ package main
 import (
 	"math"
 	"unsafe"
+	"encoding/binary"
+    // "fmt"
 )
 
 type StateType int32
@@ -484,7 +486,28 @@ type BytecodeStack []BytecodeValue
 func (bs *BytecodeStack) Clear()                { *bs = (*bs)[:0] }
 func (bs *BytecodeStack) Push(bv BytecodeValue) { *bs = append(*bs, bv) }
 func (bs *BytecodeStack) PushI(i int32)         { bs.Push(BytecodeInt(i)) }
-func (bs *BytecodeStack) PushF(f float32)       { bs.Push(BytecodeFloat(f)) }
+func (bs *BytecodeStack) PushF(f float32)       { 
+	
+	bytes := Float32bytes(f)
+    //fmt.Println(bytes)
+	float := Float32frombytes(bytes)
+	
+	bs.Push(BytecodeFloat(float)) 
+}
+
+func Float32frombytes(bytes []byte) float32 {
+    bits := binary.LittleEndian.Uint32(bytes)
+    float := math.Float32frombits(bits)
+    return float
+}
+
+func Float32bytes(float float32) []byte {
+    bits := math.Float32bits(float)
+    bytes := make([]byte, 8)
+    binary.LittleEndian.PutUint32(bytes, bits)
+    return bytes
+}
+
 func (bs *BytecodeStack) PushB(b bool)          { bs.Push(BytecodeBool(b)) }
 func (bs BytecodeStack) Top() *BytecodeValue {
 	return &bs[len(bs)-1]
