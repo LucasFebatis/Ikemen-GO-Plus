@@ -1,5 +1,9 @@
 For Raspberry Pi 3
 
+Install GLFW:
+For Got b'X11: RandR gamma ramp support seems broken
+`sudo apt-get install freeglut3-dev`
+
 # Ikemen GO Plus #
 
 IKEMEN Go Plus is a fork of IKEMEN GO that aims to implement all remaining M.U.G.E.N features currently missing in the engine and add new ones on top of it in order to make the engine more flexible and better suited for full games.
